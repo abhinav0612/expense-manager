@@ -36,6 +36,7 @@ class ExpenseView(APIView):
             if expense_date:
                 if not verify_expense_date_format(expense_date):
                     return Response({'message': 'Expense data is wrong format. Please enter date in dd/mm/yyyy format.'}, status=400)
+                expense_date = datetime.strptime(expense_date, '%d-%m-%Y')
             else:
                 expense_date = datetime.utcnow()
 

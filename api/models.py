@@ -1,4 +1,5 @@
 from datetime import datetime
+from operator import mod
 from django.db import models
 
 # Create your models here.
@@ -21,3 +22,6 @@ class Expense(BaseModel):
     expense_date = models.DateTimeField(null=False, default=datetime.utcnow)
     category = models.CharField(max_length=100, null=False)
     user = models.ForeignKey(to=ExpenseUser, on_delete=models.CASCADE)
+    source = models.CharField(max_length=100, default='')
+    unique_message_id = models.CharField(
+        max_length=256, null=False, default='')
