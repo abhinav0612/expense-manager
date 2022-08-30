@@ -12,7 +12,7 @@ class BaseModel(models.Model):
 
 
 class ExpenseUser(models.Model):
-    contact_number = models.IntegerField(null=False, primary_key=True)
+    user_id = models.IntegerField(null=False, primary_key=True)
 
 
 class Expense(BaseModel):
