@@ -1,11 +1,14 @@
-from datetime import datetime
-from unicodedata import category
+from pytz import UTC
+from datetime import datetime, timedelta
+
 from api.models import Expense, ExpenseUser
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from common.utils import verify_expense_date_format
+
+from django.conf import settings
 
 
 class ExpenseView(APIView):
@@ -46,7 +49,7 @@ class ExpenseView(APIView):
                     return Response({'message': 'Expense data is wrong format. Please enter date in dd-mm-yyyy format.'}, status=400)
                 expense_date = datetime.strptime(expense_date, '%d-%m-%Y')
             else:
-                expense_date = datetime.utcnow()
+                expense_date = datetime.utcnow().date().strftime('%d-%m-%Y')
 
             expense = Expense(amount=amount, category=category, description=desc, expense_date=expense_date,
                               user=user, updated_at=datetime.utcnow(), source=source, unique_message_id=message_id)
@@ -105,3 +108,27 @@ class ExpenseView(APIView):
         except Exception as e:
             print(e)
             return Response({'message': 'Some unexpected error occured!'}, status=500)
+
+
+class SummaryView(APIView):
+
+    def get(self, request):
+        try:
+            query_params = dict(request.query_params)
+            print(query_params)
+            start_date_str = query_params.get('start_date')[0]
+            end_date_str = query_params.get('end_date')[0]
+            user_id = query_params.get('user_id')[0]
+            if not start_date_str or not end_date_str:
+                return Response({'message': 'Start date or end date can not be null.'}, status=400)
+            user = ExpenseUser.objects.get(user_id=user_id)
+            if not user:
+                return Response({'message': 'User not found!'}, status=404)
+            start_date = datetime.strptime(start_date_str, settings.DATE_TIME_FORMATTER).astimezone(tz=UTC)
+            end_date = datetime.strptime(end_date_str, settings.DATE_TIME_FORMATTER).astimezone(tz=UTC) + timedelta(hours=23, minutes=59)
+            expenses = Expense.objects.all().filter(user=user).filter(expense_date__gte=start_date).filter(expense_date__lte=end_date).values()
+            return Response(data=expenses, status=200)
+        except Exception as e:
+            print(f'Exception occured in function_name. Error: {e}')
+            return Response({'message': 'Some unexpected error occured!'}, status=500)
+
